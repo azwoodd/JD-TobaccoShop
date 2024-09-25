@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redwood Tobacco Shop</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f400;
+        }
+        .dashboard {
+            display: none; /* Hide the dashboard initially */
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #8B0000;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .stock-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #8B0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <div class="logo">Redwood Tobacco Shop Dashboard</div>
+        </header>
+        <div class="widget">
+            <h2 class="widget-title">Current Stock</h2>
+            <div class="stock-grid">
+                <div class="stock-item" id="craftingTobaccoStock">Crafting Tobacco: 0 lbs</div>
+                <div class="stock-item" id="cigaretteStock">Cigarettes: 0 packs</div>
+                <div class="stock-item" id="cigarStock">Cigars: 0 boxes</div>
+                <div class="stock-item" id="vapeStock">Vapes: 0 units</div>
+            </div>
+        </div>
+        <button id="startDelivery">Start Delivery Job</button>
+        <div class="logs" id="deliveryLogs"></div>
+    </div>
+
+    <script>
+        window.addEventListener('message', function(event) {
+            let data = event.data;
+
+            if (data.action === 'openShopUI') {
+                document.querySelector('.dashboard').style.display = 'block';  // Show the UI
+            } else if (data.action === 'closeShopUI') {
+                document.querySelector('.dashboard').style.display = 'none';   // Hide the UI
+            } else if (data.action === 'updateShopStock') {
+                document.getElementById('craftingTobaccoStock').textContent = `Crafting Tobacco: ${data.craftingTobacco} lbs`;
+                document.getElementById('cigaretteStock').textContent = `Cigarettes: ${data.cigarettes} packs`;
+                document.getElementById('cigarStock').textContent = `Cigars: ${data.cigars} boxes`;
+                document.getElementById('vapeStock').textContent = `Vapes: ${data.vapes} units`;
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                fetch('https://jd-tobaccoshop/closeShopUI', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    if (!response.ok) {
+                        console.error("Failed to close NUI", response.status, response.statusText);
+                    }
+                }).catch(error => {
+                    console.error('Fetch error:', error);
+                });
+            }
+        });
+
+        document.getElementById('startDelivery').addEventListener('click', function() {
+    // Trigger the Lua event on the client to start the delivery
+    fetch('https://jd-tobaccoshop/startClientDelivery', {  // Updated to match the Lua event
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (!response.ok) {
+            console.error("Failed to start delivery", response.status, response.statusText);
+        } else {
+            // Close the NUI after successful delivery start
+            fetch('https://jd-tobaccoshop/closeShopUI', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            console.log("Delivery started and UI closed");
+        }
+    }).catch(error => {
+        console.error('Error:', error);
+    });
+});
+
+
+    </script>
+</body>
+</html>
